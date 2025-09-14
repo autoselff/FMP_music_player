@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(music_player LANGUAGES CXX)
+project(FMP LANGUAGES CXX)
 
 find_package(PkgConfig REQUIRED)
 

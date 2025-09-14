@@ -14,8 +14,8 @@ class MusicPlayer : public Gtk::Window {
 public:
     MusicPlayer()
     {
-        set_default_size(480, 140);
-        set_title("Folder Music Player");
+        set_default_size(560, 120);
+        set_title("FMP Music Player");
         set_decorated(false);
         set_keep_above(true);
         set_resizable(false);
@@ -24,7 +24,7 @@ public:
 
         auto pixbuf = Gdk::Pixbuf::create_from_file("bg.png");
         background = Gtk::make_managed<Gtk::Image>();
-        background->set(pixbuf->scale_simple(480, 140, Gdk::INTERP_BILINEAR));
+        background->set(pixbuf->scale_simple(560, 120, Gdk::INTERP_BILINEAR));
         background->set_halign(Gtk::ALIGN_FILL);
         background->set_valign(Gtk::ALIGN_FILL);
         overlay->add(*background);
@@ -62,7 +62,7 @@ public:
         btn_quit.signal_clicked().connect([](){ Gtk::Main::quit(); });
         box.pack_start(btn_quit, Gtk::PACK_SHRINK);
 
-        volume_adjustment = Gtk::Adjustment::create(96.0, 0.0, 128.0, 1.0, 10.0, 0.0);
+        volume_adjustment = Gtk::Adjustment::create(64.0, 0.0, 128.0, 1.0, 10.0, 0.0);
         volume_scale.set_adjustment(volume_adjustment);
         volume_scale.set_digits(0);
         volume_scale.set_value_pos(Gtk::PositionType::POS_TOP);
@@ -97,6 +97,8 @@ public:
         Mix_VolumeMusic(current_volume);
 
         Glib::signal_timeout().connect_seconds(sigc::mem_fun(*this, &MusicPlayer::on_poll_music), 1);
+
+        load_css("style.css");
     }
 
     ~MusicPlayer()
@@ -105,6 +107,42 @@ public:
         Mix_CloseAudio();
         Mix_Quit();
         SDL_Quit();
+    }
+
+    void load_css(const std::string& css_file)
+    {
+        auto css_provider = Gtk::CssProvider::create();
+        try {
+            css_provider->load_from_path(css_file);
+            auto screen = Gdk::Screen::get_default();
+            Gtk::StyleContext::add_provider_for_screen(screen, css_provider, GTK_STYLE_PROVIDER_PRIORITY_USER);
+        } catch (const Glib::FileError& e) {
+            std::cerr << "CSS file error: " << e.what() << "\n";
+        } catch (const Gtk::CssProviderError& e) {
+            std::cerr << "CSS load error: " << e.what() << "\n";
+        }
+    }
+
+    void set_background(const std::string& file)
+    {
+        try {
+            auto pixbuf = Gdk::Pixbuf::create_from_file(file);
+            background->set(pixbuf->scale_simple(480, 140, Gdk::INTERP_BILINEAR));
+        } catch (const Glib::Error& e) {
+            std::cerr << "Failed to load background: " << e.what() << "\n";
+        }
+    }
+
+    void set_button_image(Gtk::Button& btn, const std::string& file)
+    {
+        try {
+            auto pixbuf = Gdk::Pixbuf::create_from_file(file);
+            auto img = Gtk::make_managed<Gtk::Image>(pixbuf->scale_simple(32, 32, Gdk::INTERP_BILINEAR));
+            btn.set_image(*img);
+            btn.set_always_show_image(true);
+        } catch (const Glib::Error& e) {
+            std::cerr << "Failed to load button image: " << e.what() << "\n";
+        }
     }
 
 private:
@@ -233,7 +271,7 @@ private:
 
 int main(int argc, char **argv)
 {
-    auto app = Gtk::Application::create(argc, argv, "org.example.music_player");
+    auto app = Gtk::Application::create(argc, argv, "com.autoselff.fmp");
     MusicPlayer player;
     return app->run(player);
 }
